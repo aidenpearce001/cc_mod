@@ -1,6 +1,7 @@
 import requests
 import json
 from bs4 import BeautifulSoup
+import re 
 
 SSL = 'https://www.sslproxies.org/'
 FREE_PROXY = 'https://free-proxy-list.net/'
@@ -22,7 +23,7 @@ nums = 0
 
 def downloadsocks(mode):
 	if mode == "socks4":
-		f = open("socks4.txt",'wb')
+		f = open("socks.txt",'wb')
 		try:
 			r = requests.get("https://api.proxyscrape.com/?request=displayproxies&proxytype=socks4&country=all",timeout=5)
 			f.write(r.content)
@@ -63,9 +64,9 @@ def downloadsocks(mode):
 				out_file.close()
 		except:
 			pass
-		print("> Have already downloaded socks4 list as socks4.txt")
+
 	if mode == "socks5":
-		f = open("socks5.txt",'wb')
+		f = open("socks.txt",'wb')
 		try:
 			r = requests.get("https://api.proxyscrape.com/v2/?request=getproxies&protocol=socks5&timeout=10000&country=all&simplified=true",timeout=5)
 			f.write(r.content)
@@ -92,7 +93,6 @@ def downloadsocks(mode):
 			f.close()
 		except:
 			f.close()
-		print("> Have already downloaded socks5 list as socks5.txt")
 
 def proxy_archive():
 
@@ -119,6 +119,8 @@ def port_porcess(port_char):
 
 def SPYS_ME_SOCKS():
     
+    socks_list = []
+
     headers = {
       'Connection': 'keep-alive',
       'Pragma': 'no-cache',
@@ -171,6 +173,7 @@ def SPYS_ME_SOCKS():
             socks_list.append(ip+":"+port_porcess(port_char))
         except:
             continue
+    return socks_list
 
 def hidemy_socks(mode):
     start = 0
@@ -226,39 +229,18 @@ def proxyscan_socks(mode):
         for _ in f:
             socks_list.append(_.rstrip())
 			
-def free_proxy(region):
-    total_proxy = []    
-    
-    for i in (SSL,FREE_PROXY,SOCK_PROXY,ANON_PROXY):
-        
-        proxy_list = []
-        
-        page  = requests.get(i)
-        soup  = BeautifulSoup(page.content, 'html.parser')
-        table =  soup.find("table", {"id": "proxylisttable"})
-        table_body = table.find('tbody')   
+def get_all(socks_type):
 
-        for row in table_body:
-            cols = row.find_all('td')
-            cols = [ele.text.strip() for ele in cols]
-            print(cols)
-            if region == "ALL":    
-                proxy_list.append([ele for ele in cols if ele])
-            else:
-                proxy_list.append([ele for ele in cols if cols[2] == region])
+    proxies = []
+    downloadsocks(socks_type)
 
-        proxy_list = [x for x in proxy_list if x != []]
-        print(proxy_list)
-        proxy_list = [x[0]+":"+x[1] for x in proxy_list]
-        
-        # print("LIST COME HERE")
-        # print(proxy_list)
-        total_proxy +=proxy_list
-    
-    archive = proxy_archive()
-    total_proxy += archive
+    socks_list = open('socks.txt').readlines()
+    for i in socks_list:
+        proxies.add(i)
+    for i in proxy_archive:
+        proxies.add(i)
 
-    return total_proxy
+    return proxies
 
 def checking(lines,socks_type,ms,rlock,):
     global nums
@@ -328,4 +310,6 @@ def check_socks(ms, socks_type):
             for lines in list(proxies):
                 fp.write(bytes(lines,encoding='utf8'))
 
-check_socks(ms, socks_type =5)
+# check_socks(ms, socks_type =5)
+# SPYS_ME_SOCKS()
+print(SPYS_ME_SOCKS())
