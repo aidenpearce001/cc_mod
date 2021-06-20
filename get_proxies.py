@@ -2,6 +2,9 @@ import requests
 import json
 from bs4 import BeautifulSoup
 import re 
+import threading
+import time
+import sys
 
 SSL = 'https://www.sslproxies.org/'
 FREE_PROXY = 'https://free-proxy-list.net/'
@@ -14,10 +17,9 @@ PROXYLIST_DOWNLOAD_SOCKS4 = 'https://www.proxy-list.download/SOCKS4'
 PROXYLIST_DOWNLOAD_SOCKS5 = 'https://www.proxy-list.download/SOCKS5'
 proxy_cz = "http://free-proxy.cz/en/proxylist/country/all/socks5/ping/all/2"
 hidemy_socks5 = "https://hidemy.name/en/proxy-list/?type=5&start={}"
-hidemy_socks4 = "https://hidemy.name/en/proxy-list/?type=5&start={}"
+hidemy_socks4 = "https://hidemy.name/en/proxy-list/?type=4&start={}"
 proxy_scan = "https://www.proxyscan.io/download?type={}"
 
-socks_list = []
 mapping_port = {}
 nums = 0
 
@@ -173,10 +175,12 @@ def SPYS_ME_SOCKS():
             socks_list.append(ip+":"+port_porcess(port_char))
         except:
             continue
+
     return socks_list
 
 def hidemy_socks(mode):
     start = 0
+    socks_list = []
     
     hidemy_headers = {
       'authority': 'hidemy.name',
@@ -219,36 +223,46 @@ def hidemy_socks(mode):
     
         start +=64
 
+    return socks_list 
+
 def proxyscan_socks(mode):
+
+    socks_list = []
+
+    if mode == 'socks5':
+        mod = 5
+    elif mode == 'socks4':
+        mod = 4
 
     r = requests.get(proxy_scan.format(mode), allow_redirects=True)
     open(mode+'.txt', 'wb').write(r.content)
     
-    
     with open(mode+'.txt','r+') as f:
         for _ in f:
             socks_list.append(_.rstrip())
-			
+
+    return socks_list	
 def get_all(socks_type):
 
-    proxies = []
+    proxies = set()
     downloadsocks(socks_type)
 
     socks_list = open('socks.txt').readlines()
     for i in socks_list:
         proxies.add(i)
-    for i in proxy_archive:
+    for i in hidemy_socks(socks_type):
         proxies.add(i)
-
+    for i in proxyscan_socks(socks_type):
+        proxies.add(i)
+        
     return proxies
 
 def checking(lines,socks_type,ms,rlock,):
     global nums
-    global proxies
     proxy = lines.strip().split(":")
     if len(proxy) != 2:
         rlock.acquire()
-        proxies.remove(lines)
+        socks_list.remove(lines)
         rlock.release()
         return
     err = 0
@@ -280,13 +294,18 @@ def checking(lines,socks_type,ms,rlock,):
 
 def check_socks(ms, socks_type):
     global nums
+    global socks_list
+
     thread_list=[]
     rlock = threading.RLock()
+
+    socks_list = list(get_all(socks_type=socks_type))
     for lines in socks_list:
-        if choice == "5":
+        print(lines)
+        if socks_type == "socks5":
             th = threading.Thread(target=checking,args=(lines,5,ms,rlock,))
             th.start()
-        if choice == "4":
+        if socks_type == "socks4":
             th = threading.Thread(target=checking,args=(lines,4,ms,rlock,))
             th.start()
         thread_list.append(th)
@@ -300,16 +319,17 @@ def check_socks(ms, socks_type):
     print("\r\n> Checked all proxies, Total Worked:"+str(len(socks_list)))
     ans = input("> Do u want to save them in a file? (y/n, default=y)")
 
-    if socks_type == "4":
+    if socks_type == "socks4":
         with open("socks.txt", 'wb') as fp:
             for lines in list(proxies):
                 fp.write(bytes(lines,encoding='utf8'))
         fp.close()
-    elif socks_type == "5":
+    elif socks_type == "socks5":
         with open("socks.txt", 'wb') as fp:
             for lines in list(proxies):
                 fp.write(bytes(lines,encoding='utf8'))
 
 # check_socks(ms, socks_type =5)
 # SPYS_ME_SOCKS()
-print(SPYS_ME_SOCKS())
+# print(SPYS_ME_SOCKS())
+check_socks(5,socks_type='socks5')
