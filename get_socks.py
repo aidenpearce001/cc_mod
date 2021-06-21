@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 import re 
 import threading
 import time
+import socks
 import sys
 
 SSL = 'https://www.sslproxies.org/'
@@ -199,13 +200,11 @@ def hidemy_socks(mode):
       'accept-language': 'vi,en-US;q=0.9,en;q=0.8,vi-VN;q=0.7'
     }
 
-    print(mode)
     if mode == 'socks5':
         hidemy_url = hidemy_socks5.format(start)
     elif mode == 'socks4':
         hidemy_url = hidemy_socks4.format(start)
       
-    print(hidemy_url)
     res = requests.get(hidemy_url,headers=hidemy_headers)
     soup = BeautifulSoup(res.content,"html.parser")
     hidemy_pages = soup.find('div',{'class':'pagination'}).findAll('a')
@@ -300,8 +299,11 @@ def check_socks(ms, socks_type):
     rlock = threading.RLock()
 
     socks_list = list(get_all(socks_type=socks_type))
+    print(f"Total proxies :{len(socks_list)}")
+    time.sleep(2
+    )
     for lines in socks_list:
-        print(lines)
+        # print(lines)
         if socks_type == "socks5":
             th = threading.Thread(target=checking,args=(lines,5,ms,rlock,))
             th.start()
@@ -317,19 +319,64 @@ def check_socks(ms, socks_type):
         sys.stdout.write("> Checked "+str(nums)+" proxies\r")
         sys.stdout.flush()
     print("\r\n> Checked all proxies, Total Worked:"+str(len(socks_list)))
-    ans = input("> Do u want to save them in a file? (y/n, default=y)")
 
     if socks_type == "socks4":
         with open("socks.txt", 'wb') as fp:
-            for lines in list(proxies):
+            for lines in list(socks_list):
                 fp.write(bytes(lines,encoding='utf8'))
         fp.close()
     elif socks_type == "socks5":
         with open("socks.txt", 'wb') as fp:
-            for lines in list(proxies):
+            for lines in list(socks_list):
                 fp.write(bytes(lines,encoding='utf8'))
 
 # check_socks(ms, socks_type =5)
 # SPYS_ME_SOCKS()
 # print(SPYS_ME_SOCKS())
-check_socks(5,socks_type='socks5')
+def ParseUrl(original_url):
+	global target
+	global path
+	global port
+	global protocol
+	original_url = original_url.strip()
+	url = ""
+	path = "/"#default value
+	port = 80 #default value
+	protocol = "http"
+	#http(s)://www.example.com:1337/xxx
+	if original_url[:7] == "http://":
+		url = original_url[7:]
+	elif original_url[:8] == "https://":
+		url = original_url[8:]
+		protocol = "https"
+	#http(s)://www.example.com:1337/xxx ==> www.example.com:1337/xxx
+	#print(url) #for debug
+	tmp = url.split("/")
+	website = tmp[0]#www.example.com:1337/xxx ==> www.example.com:1337
+	check = website.split(":")
+	if len(check) != 1:#detect the port
+		port = int(check[1])
+	else:
+		if protocol == "https":
+			port = 443
+	target = check[0]
+	if len(tmp) > 1:
+		path = url.replace(website,"",1)
+
+ParseUrl("http://38.27.122.103")    
+print(target) 
+ms = 5
+# check_socks(5,socks_type='socks5')
+
+proxies = open('socks.txt').readlines()
+for proxy in proxies:
+    proxy = proxy.strip().split(":")
+    s = socks.socksocket()
+    s.set_proxy(socks.SOCKS5, str(proxy[0]), int(proxy[1]))
+    s.settimeout(ms)
+    s.connect((str(target), int(port)))
+    if protocol == "https":
+        ctx = ssl.SSLContext()
+        s = ctx.wrap_socket(s,server_hostname=target)
+    sent = s.send(str.encode("GET / HTTP/1.1\r\n\r\n"))
+    print(str(target))

